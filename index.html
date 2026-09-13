@@ -42,6 +42,7 @@ button.listen{gap:8px;display:inline-flex;align-items:center}
 button.listen.on{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 button.listen .dot{width:10px;height:10px;border-radius:50%;background:var(--bad);opacity:.35}
 button.listen.on .dot{opacity:1;animation:pulse 1.2s infinite}
+#speakToggle.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep);font-weight:700}
 @keyframes pulse{50%{transform:scale(1.5);opacity:.5}}
 @media (prefers-reduced-motion:reduce){button.listen.on .dot{animation:none}}
 .grid{display:grid;grid-template-columns:300px 1fr;gap:20px}
@@ -104,6 +105,7 @@ h2.past{font-family:var(--display);font-size:13px;letter-spacing:.08em;text-tran
     <p class="sub">Type or say a judge's question. Get the answer Donal should give — in 30 seconds, from the brief, nothing invented.</p>
   </div>
   <div class="timer" id="timer"><small>Q&amp;A clock</small><b id="clock">3:00</b><button id="tStart">Start</button><button id="tReset">Reset</button></div>
+  <button id="speakToggle" title="Read every answer aloud as it arrives">Speak answers: off</button>
   <button class="gear" id="gearBtn" title="Settings" aria-label="Settings">&#9881;</button>
 </header>
 
@@ -203,6 +205,198 @@ const BANK = [
  ]]
 ];
 
+// ---------- Prepared answers (instant, no API call) ----------
+const PRE = {
+"How do you stop the AI hallucinating that a product is safe?": `SAY THIS
+It can't, because the model never decides. A rules engine checks the label against each person's profile and returns yes, no or "ask the manufacturer". The language model only puts that result into plain words, and every answer is checked afterwards against the label's own text. Anything that goes further than the label is thrown away.
+NUMBERS
+Every generative surface runs through one function, askGrounded(). Assertion guard refuses four things: unlisted numbers, resolved ambiguities, absence claims, instructions. 28 veracity tests.
+DON'T SAY
+"It's accurate" or "it's safe" — we never use the word safe about food. Say "it quotes the label".
+IF THEY PUSH
+If the guard refuses, the shopper sees the label's own words under a heading that says so. If the layer fails to load, nothing is generated at all.`,
+
+"What happens when the model gets it wrong?": `SAY THIS
+The wrong answer never reaches the screen. The guard checks every reply against the grounding envelope built from the label, and a reply that fails is discarded rather than softened. The shopper gets the label's own words instead, under a heading that says "we're not going to put that in our own words". It fails closed, and the register catches regressions on every launch.
+NUMBERS
+Guard register row runs two answers that must be refused and fails if either passes. Feature register: 65 rows, checked every launch.
+DON'T SAY
+"It rarely gets it wrong" — no measured error rate on real answers yet. Don't quote an accuracy figure.
+IF THEY PUSH
+The guard's false-positive rate on real answers isn't measured yet; that's on the next-six-months list. We'd rather refuse too often than assert once.`,
+
+"Which AI models and tools did you use, and did you use the ones provided?": `SAY THIS
+Claude does the heavy lifting: reading labels from photographs, explaining verdicts, the chat assistant and the swap agent, all behind our Cloudflare Worker. OpenAI is used for one thing, turning a held-button voice clip into text. Open Food Facts is the product data, and the FSAI site is our recall source. We built the app itself with Claude Code.
+NUMBERS
+Worker v2.4.21 holds every key; the browser never sees one. Voice: gpt-4o-mini-transcribe, 20-second cap, no copy kept. ZXing 0.21.3 for iPhone barcodes.
+DON'T SAY
+Don't claim we used the Challenge's GCP or OpenAI credits beyond transcription if we didn't. Be exact.
+IF THEY PUSH
+Model choice is swappable: the veracity layer sits outside the model, so changing provider changes nothing about what the app is allowed to say.`,
+
+"How did you test it? What's your accuracy?": `SAY THIS
+Three layers. A feature register inside the app runs 65 tests on every launch and raises a red panel if anything that used to work has stopped or can't be reached on screen. Twenty-eight unit tests cover the veracity layer. And an offline scorer runs the engine against a hand-marked ground-truth sheet and fails the build if it ever answers a case a person marked "ask the manufacturer".
+NUMBERS
+65 register rows. 28 veracity tests. score.mjs exits non-zero on any manufacturer_check row answered. Real recall fixtures: Flahavan's 2026.A24.
+DON'T SAY
+Don't give a percentage accuracy — we don't have a validated one. Say "zero wrong on the legal-omission rows, by design".
+IF THEY PUSH
+The ground-truth sheet is small and hand-written. The honest gap is scale, not method; the method is built to grow the sheet without changing the engine.`,
+
+"Where does the user's health data go? GDPR?": `SAY THIS
+It stays on the phone. Profiles, the diary, scan history and receipts live in the browser's own storage; there are no accounts and no household data on our server. Two stated exceptions, written on screen: a review you choose to send, and a voice clip while you hold the talk button, which is transcribed and not kept. Recall matching happens on the device too.
+NUMBERS
+Zero server-side household data. Worker keeps no copy of voice: not in KV, cache or logs. Reviews are held until a person approves them.
+DON'T SAY
+"Fully GDPR compliant" — say "designed so there's nothing to breach": special-category data never leaves the device.
+IF THEY PUSH
+The nutritionist platform will need shared data, and that's exactly why it's on the roadmap rather than in the MVP: consent and a proper data model first.`,
+
+"Why not just prompt the model better?": `SAY THIS
+Because a prompt is a request, and requests get talked past: by a shopper's phrasing, a long conversation, or twelve other instructions in the same breath. So we do it twice. Before the call, an envelope collects what the model is allowed to say. After the call, a guard checks the reply against that same envelope. One envelope, built once, so the rules and the check can never drift apart.
+NUMBERS
+Two halves: grounding envelope before, assertion guard after. 18-entry ambiguity knowledge base is the only source of anything not on the pack.
+DON'T SAY
+"Our prompts are really good." The point is that we don't trust prompts.
+IF THEY PUSH
+The guard is deterministic code, not another model call. A model checking a model would just move the problem.`,
+
+"Is this a medical device?": `SAY THIS
+No. It quotes what the label says and applies rules the shopper wrote themselves: "I avoid milk". It never diagnoses, never says a food is safe, never tells you what to eat or to stop eating. The guard actually refuses those sentences. When the label can't answer, it says "check with the manufacturer".
+NUMBERS
+Guard refuses: "safe to eat", "you should avoid", "will trigger", anything diagnostic. Verdict language: good match / flagged / needs a manufacturer check.
+DON'T SAY
+Don't argue the regulation in detail on stage; say the design intent and offer to follow up in writing.
+IF THEY PUSH
+If a regulator ever disagreed, the architecture already keeps every claim traceable to a label or a cited legal exemption, which is what a compliance review would ask for.`,
+
+"How do you handle 'may contain' and cross-contamination?": `SAY THIS
+Honestly: precautionary labelling is voluntary under EU law, so its absence tells you nothing. Where a label says "may contain", we show it and flag it for anyone in the household who avoids that allergen. Where it doesn't, we never say "no cross-contamination risk", because the label hasn't said that. Yuka, for comparison, ignores traces altogether.
+NUMBERS
+Reg (EU) 1169/2011 Article 36: PAL voluntary. EU harmonisation expected around 2027. Yuka: 85m users, ignores "traces".
+DON'T SAY
+"Trace-free" or "no risk of contamination". Never.
+IF THEY PUSH
+We surface FSAI allergen alerts on the product page, which is where undeclared allergens actually show up in the real world: 48 alerts in 2025.`,
+
+"What does 'the label is allowed to be silent' actually mean?": `SAY THIS
+EU law lets some allergen-derived ingredients go unnamed. Wheat-based glucose syrup is the best example: it's specifically exempt, so a label can say "glucose syrup" and never mention wheat. A keyword search for "wheat" gets that exactly backwards. Our knowledge base holds eighteen of these cases, each citing the regulation, and for any of them we stop and say "ask the manufacturer".
+NUMBERS
+Reg (EU) 1169/2011 Annex II point 1(a). 18 KB entries: 14 stated in law, 3 argument from silence, 1 applied. Others: lecithin, E471, natural flavouring, gelatine.
+DON'T SAY
+Don't say the glucose syrup "contains wheat" — it's processed below 20 ppm and can be labelled gluten-free. We show the words and point to the manufacturer.
+IF THEY PUSH
+None of the nine competitor apps we checked handles these exemptions; most match hidden names as strings, which is the bug we're avoiding.`,
+
+"What's the AI Act / EU regulatory exposure?": `SAY THIS
+Low by design, and we'd want to confirm the detail in writing rather than assert it on stage. The app doesn't profile people, doesn't make decisions about them, and doesn't diagnose; it quotes labels and applies the shopper's own rules. We built an AI governance canvas as part of the project, and every claim the app makes is traceable to a label or a cited exemption.
+NUMBERS
+RAIMS canvas for AI governance (from the deck). 18 KB entries each cite their legal source. On-device data.
+DON'T SAY
+Don't state a risk classification as fact. Say "our reading is… and we'll confirm it".
+IF THEY PUSH
+Offer the follow-up: "I'll send you the governance canvas and the knowledge-base citations after the session."`,
+
+"Does it work on iPhone? Native app?": `SAY THIS
+Yes, it's a responsive web app and live barcode scanning works on iPhone Safari today. iOS has no built-in barcode detector, so we load a small open-source decoder on first use, behind the same camera loop. A native app is on the six-to-twelve-month list, mainly for push notifications on recalls, which a web app can't do while closed.
+NUMBERS
+ZXing 0.21.3, about 340 KB, fetched only on first use. Live scanning on iPhone since v2.9, 3 Sept. Current build v2.13.1.
+DON'T SAY
+Don't call it "the app on the App Store" — there isn't one yet. Say "web app you add to your Home Screen".
+IF THEY PUSH
+Web-first was deliberate: one file, one deploy, no store review, and the same veracity layer on every platform.`,
+
+"What if the product isn't in the database?": `SAY THIS
+You photograph the label. Claude reads the ingredients and nutrition panel off the pack, we treat that as the primary source, and you can bind it to the barcode so the next person who scans it gets it too. If the pack and the database disagree, we believe the box. And if the model can't be reached, an in-browser text reader takes over.
+NUMBERS
+Open Food Facts is the database. Label-vs-database clash: "Believe the box". OCR fallback runs entirely in the browser.
+DON'T SAY
+Don't imply we've solved coverage — Open Food Facts is patchy for Irish own-brand products; that's why the label read exists.
+IF THEY PUSH
+Every bound label carries the reading with it, so a shopper can see the words the verdict was built from.`,
+
+"How current are your recall alerts?": `SAY THIS
+Within the hour. The FSAI publishes every allergen alert on its website with no feed and no API, so our worker reads the listing and each notice, keeps it for an hour, and never caches a failure. The app checks on every launch and matches notices on the phone against your own history, basket, diary and receipts, and says "check your pack against the batch details", never "you have this".
+NUMBERS
+FSAI alerts: 48 in 2025, 58 in 2024, 25 to end of August 2026. Matching is by brand and product name, not barcode, and we say so on screen.
+DON'T SAY
+"We notify you of recalls" — not while the app is closed. Say "on every launch".
+IF THEY PUSH
+Push notifications need a native or installed app plus a place to store push endpoints; designed so the server would only ever hold endpoints, never household data.`,
+
+"What happens offline or if the API is down?": `SAY THIS
+The app degrades rather than guesses. Scanning and the rules engine run on the device. If the model can't be reached, label reading falls back to an in-browser text reader. If the FSAI or our worker is unreachable, you see the last fetched alerts with their time, or a plain "couldn't reach the FSAI". And no generated explanation appears unless the veracity layer has loaded.
+NUMBERS
+One self-contained index.html. Alerts cached one hour, never cached on failure. If the guard doesn't load, askGrounded() returns a refusal.
+DON'T SAY
+"Works fully offline" — product lookups and explanations need the network.
+IF THEY PUSH
+Fail-soft was tested with the worker off: the app tells you what it couldn't do instead of showing an empty or invented result.`,
+
+"Who exactly is the customer — the shopper or the nutritionist?": `SAY THIS
+Both, in a specific order. Nutritionists and dietitians are the distribution engine: they hand it to clients who already trust them, and get a share of the subscription. Consumers can also subscribe directly. The beachhead is Ireland, where at least one in ten people avoid something and there are over two thousand qualified practitioners.
+NUMBERS
+€45/month practitioner platform; €6.99 referred client, €2.99 back to the practitioner; €7.99 direct consumer. 2,100+ practitioners; up to 900,000 people.
+DON'T SAY
+Don't say "everyone who eats" — say who pays first.
+IF THEY PUSH
+Bridget is a practising nutritional therapist; the practitioner platform is being prototyped with her caseload as the first user.`,
+
+"How many people have actually used it?": `SAY THIS
+It's early and we'll be straight about that. Over fifty profiles created and over a hundred products scanned in the beta, four hundred nutrition professionals contacted, mentor sessions, and a prototype of the practitioner platform. The strongest validation so far is qualitative: practitioners describing the "is this OK for me?" messages they get between appointments.
+NUMBERS
+50+ profiles, 100+ products scanned, 400 professionals contacted. Reviews feature live since v2.12 with moderation.
+DON'T SAY
+Don't say "400 nutritionists signed up" — they were contacted. Don't round up.
+IF THEY PUSH
+Next step is the commercial and pricing validation on the roadmap; we want paying practitioners, not download counts.`,
+
+"Isn't this just Yuka?": `SAY THIS
+Yuka scores a product for everyone; we check it for the people in your house. It ignores "may contain" entirely, and like every app we looked at it can't handle the cases where the label is legally allowed to stay silent. We treat those as "ask the manufacturer" rather than guessing, and we add the household, the diary, receipts and live FSAI recalls.
+NUMBERS
+Yuka: 85 million users, own database, ignores traces. Nine apps checked; none handles Annex II exemptions.
+DON'T SAY
+Don't rubbish Yuka — 85 million users is proof the behaviour exists. Say "different question".
+IF THEY PUSH
+Their scale is our market evidence; our edge is the veracity layer and the practitioner channel, which they don't have.`,
+
+"Why would a nutritionist pay €45 a month?": `SAY THIS
+Time, mainly. Practitioners told us the same thing: clients message between appointments asking "is this OK for me?", and they can't answer fast enough. The app answers from the client's own profile, keeps the client on the plan, and the practitioner sees adherence instead of hearing about it a month later. The revenue share is a bonus, not the reason.
+NUMBERS
+€45/month platform; €2.99/month per referred client, so 16 clients cover the fee. Practitioner quotes on the deck: time constraints, constant questions, low adherence.
+DON'T SAY
+"They'll make money from it" — 16 clients only breaks even. Lead with time saved and adherence.
+IF THEY PUSH
+Pricing is unvalidated and is on the six-month roadmap as a named task; €45 is a hypothesis we'll test with real practitioners.`,
+
+"What's your TAM, honestly?": `SAY THIS
+Honestly, Ireland first. Safefood says at least one in ten people here avoid something, up to nine hundred thousand, and there are over two thousand qualified practitioners. One percent of those shoppers at €7.99 is under a million in annual revenue; ten percent is €8.6 million. The global figures on the slide are context, not a plan.
+NUMBERS
+Ireland: 900k × €7.99 × 12 ≈ €86m ceiling; 1% = €0.86m ARR, 5% = €4.3m, 10% = €8.6m. Practitioners: 2,100 × €45 × 12 ≈ €1.1m.
+DON'T SAY
+Don't defend the €120 billion global figure; it assumes everyone pays. Concede it gracefully.
+IF THEY PUSH
+The UK is the natural second market: same 14 allergens under assimilated law, so the knowledge base carries over.`,
+
+"What will you do in the next 6 months?": `SAY THIS
+Turn the MVP into a platform. The practitioner side first: client management, food profiles, AI insights and support. Then a voice-enabled native app for recalls while the app is closed, translation for the households that need it, and pricing validation with paying practitioners. Underneath that, ongoing AI governance and getting the knowledge base reviewed by a food-law professional.
+NUMBERS
+Roadmap items on the deck: nutritionist platform, native mobile, translation, pricing validation, partnerships, fundraising, marketing, AI governance.
+DON'T SAY
+Don't promise dates for the native app.
+IF THEY PUSH
+The first paying practitioner cohort is the milestone that matters; everything else is sequenced behind it.`,
+
+"What's the ask?": `SAY THIS
+Three things. Introductions to practitioners and dietetic networks willing to pilot with real clients. A food-law review of our knowledge base, because we've built it to be checked. And mentors on the commercial side as we validate pricing over the next six months; fundraising follows that, not the other way round.
+NUMBERS
+Pilot target: practitioners with 16+ clients each. KB: 18 entries awaiting professional review.
+DON'T SAY
+Don't ask for money on stage unless the judges are investors; ask for the pilot.
+IF THEY PUSH
+Try it tonight: scan the QR code, it's live, and we'd rather hear what's wrong than what's nice.`
+};
+
 // ---------- State ----------
 let history = [], listening = false, rec = null, ctl = null;
 const $ = id => document.getElementById(id);
@@ -223,7 +417,7 @@ const KEYS={k:"kyg_coach_key",m:"kyg_coach_model"};
 try{ $("apikey").value=localStorage.getItem(KEYS.k)||""; $("model").value=localStorage.getItem(KEYS.m)||"claude-sonnet-4-5"; }catch(e){}
 $("apikey").addEventListener("input",e=>{try{localStorage.setItem(KEYS.k,e.target.value.trim())}catch(err){}});
 $("model").addEventListener("input",e=>{try{localStorage.setItem(KEYS.m,e.target.value.trim())}catch(err){}});
-if(!$("apikey").value){ $("banner").hidden=false; $("banner").innerHTML='Paste your Anthropic API key under the &#9881; settings button (top right) to get live answers. The question bank notes work without it.'; }
+if(!$("apikey").value){ $("banner").hidden=false; $("banner").innerHTML='The 21 listed questions answer instantly. For anything else, paste your Anthropic API key under the &#9881; button (top right).'; }
 async function sample(turns,opts){
   const key=$("apikey").value.trim(); if(!key){ const e=new Error("No API key set."); e.code="not_granted"; throw e; }
   const system=turns[0].content.replace(/\n\nReply 'Ready\.'$/,""); const messages=turns.slice(2);
@@ -262,8 +456,58 @@ function render(text) {
   const block = (k, title) => out[k] ? `<div class="sec ${k}"><h3>${title}</h3><p>${esc(out[k].join("\n").trim()).replace(/\n/g,"<br>")}</p></div>` : "";
   return block("say","Say this") + block("numbers","Numbers to hand") + block("dont","Don't say") + block("push","If they push");
 }
-async function ask(q, note) {
+const HINTS = [
+ ["How do you stop the AI hallucinating that a product is safe?", ["hallucinat","make things up","invent","wrong answer","trust the ai","trust the model"]],
+ ["What happens when the model gets it wrong?", ["gets it wrong","goes wrong","mistake","error","incorrect"]],
+ ["Which AI models and tools did you use, and did you use the ones provided?", ["which model","what model","models did","tools provided","openai","gpt","gemini","claude","credits","tech stack","stack"]],
+ ["How did you test it? What's your accuracy?", ["accura","test","tested","validate","evaluation","eval","benchmark","precision","ground truth"]],
+ ["Where does the user's health data go? GDPR?", ["gdpr","privacy","personal data","health data","data go","store the data","where is the data","data protection","secure"]],
+ ["Why not just prompt the model better?", ["prompt","prompting","system prompt","prompt engineering"]],
+ ["Is this a medical device?", ["medical device","medical","clinical","hse","regulated as","hpra"]],
+ ["How do you handle 'may contain' and cross-contamination?", ["may contain","cross-contam","cross contam","traces","precautionary"]],
+ ["What does 'the label is allowed to be silent' actually mean?", ["silent","allowed not to","glucose syrup","annex","exempt","hidden ingredient","legal omission","label doesn't say"]],
+ ["What's the AI Act / EU regulatory exposure?", ["ai act","regulat","compliance","high-risk","high risk","liability","legal exposure"]],
+ ["Does it work on iPhone? Native app?", ["iphone","android","native","app store","play store","mobile app","ios"]],
+ ["What if the product isn't in the database?", ["not in the database","isn't in the database","database","coverage","own brand","own-brand","unknown product","no barcode"]],
+ ["How current are your recall alerts?", ["recall","alert","fsai","up to date","current"]],
+ ["What happens offline or if the API is down?", ["offline","api is down","goes down","outage","no signal","no internet","resilien"]],
+ ["Who exactly is the customer — the shopper or the nutritionist?", ["who is the customer","who's the customer","target customer","who pays","b2b","b2c","shopper or","make money","business model","revenue","pricing","price"]],
+ ["How many people have actually used it?", ["how many users","how many people","traction","used it","user numbers","downloads","beta users"]],
+ ["Isn't this just Yuka?", ["yuka","fig","spoonful","competitor","competition","different from","myfitnesspal","noom","already exist"]],
+ ["Why would a nutritionist pay €45 a month?", ["45","nutritionist pay","dietitian pay","practitioner pay","why would a nutritionist","why would a dietitian","willing to pay"]],
+ ["What's your TAM, honestly?", ["tam","market size","addressable","how big is the market","120 billion","billion"]],
+ ["What will you do in the next 6 months?", ["next 6","next six","roadmap","next steps","what's next","plan for","12 months"]],
+ ["What's the ask?", ["the ask","what do you need","what are you asking","how can we help","looking for"]]
+];
+const STOP = new Set("the a an is it of to do you your how what why in on for and or does are this that with we our".split(" "));
+const words = t => t.toLowerCase().replace(/[^a-z0-9€' ]/g," ").split(/\s+/).filter(w => w && !STOP.has(w));
+function matchPre(q) {
+  if (PRE[q]) return q;
+  const lq = q.toLowerCase();
+  for (const [k, hs] of HINTS) if (hs.some(h => lq.includes(h))) return k;
+  const qw = new Set(words(q)); let best = null, bs = 0;
+  for (const k of Object.keys(PRE)) { const kw = words(k); const hit = kw.filter(w => qw.has(w)).length; const score = hit / Math.max(3, Math.min(kw.length, qw.size)); if (score > bs) { bs = score; best = k; } }
+  return bs >= 0.5 ? best : null;
+}
+function finish(bubble, text, q, fromPre) {
+  const tools = document.createElement("div"); tools.className = "tools";
+  const say = /SAY THIS\s*\n([\s\S]*?)\n\s*NUMBERS/i.exec(text); const spoken = say ? say[1].trim() : text;
+  const b1 = document.createElement("button"); b1.textContent = "Read aloud"; b1.onclick = () => speak(spoken);
+  const b2 = document.createElement("button"); b2.textContent = "Copy answer"; b2.onclick = () => navigator.clipboard?.writeText(spoken).then(()=>{b2.textContent="Copied";setTimeout(()=>b2.textContent="Copy answer",1500)});
+  const b0 = document.createElement("button"); b0.textContent = "Stop"; b0.onclick = stopSpeaking;
+  tools.append(b1, b0, b2);
+  if (autoSpeak) speak(spoken);
+  if (fromPre) { const b3 = document.createElement("button"); b3.textContent = "Ask live instead"; b3.onclick = () => ask(q, null, true); tools.append(b3); }
+  bubble.appendChild(tools);
+}
+async function ask(q, note, forceLive) {
   q = (q || "").trim(); if (!q) return;
+  const hit = forceLive ? null : matchPre(q);
+  if (hit) {
+    $("qin").value = ""; $("interim").textContent = "";
+    const bubble = addTurn("judge", "Judge", esc(hit)); addTurn("coach", "Coach", render(PRE[hit]) + `<div class="notes">Prepared answer${hit !== q ? " — matched from: “" + esc(q) + "”" : ""}</div>`);
+    finish($("stageA"), PRE[hit], hit, true); return;
+  }
   $("qin").value = ""; $("interim").textContent = "";
   addTurn("judge", "Judge", esc(q));
   const bubble = addTurn("coach", "Coach", note ? `<div class="notes">Notes to hand: ${esc(note)}</div>` : "");
@@ -275,11 +519,7 @@ async function ask(q, note) {
     const r = await sample(turns, {cache:false, signal:ctl.signal, onText:({text}) => { live.className = ""; live.innerHTML = render(text); }});
     live.className = ""; live.innerHTML = render(r.text);
     history.push({role:"user", content:"Judge's question: " + q}, {role:"assistant", content:r.text});
-    const tools = document.createElement("div"); tools.className = "tools";
-    const say = /SAY THIS\s*\n([\s\S]*?)\n\s*NUMBERS/i.exec(r.text); const spoken = say ? say[1].trim() : r.text;
-    const b1 = document.createElement("button"); b1.textContent = "Read aloud"; b1.onclick = () => speak(spoken);
-    const b2 = document.createElement("button"); b2.textContent = "Copy answer"; b2.onclick = () => navigator.clipboard?.writeText(spoken).then(()=>{b2.textContent="Copied";setTimeout(()=>b2.textContent="Copy answer",1500)});
-    tools.append(b1, b2); bubble.appendChild(tools);
+    finish(bubble, r.text, q, false);
   } catch (e) {
     if (e && (e.code === "cancelled" || e.name === "AbortError")) { live.remove(); return; }
     live.className = "err";
@@ -309,7 +549,7 @@ function startRec() {
     if (finalBuf.trim()) timer = setTimeout(() => { const q = finalBuf.trim(); finalBuf = ""; ask(q); }, 1400);
   };
   rec.onerror = ev => { if (ev.error === "not-allowed") { stopRec(); $("interim").textContent = "Microphone blocked — allow it in the address bar and try again."; } };
-  rec.onend = () => { if (listening) { try { rec.start(); } catch (e) {} } };
+  rec.onend = () => { if (listening && !speaking) { try { rec.start(); } catch (e) {} } };
   rec.start();
 }
 function stopRec() { listening = false; $("listen").classList.remove("on"); $("listenLbl").textContent = "Listen"; if (rec) { rec.onend = null; try { rec.stop(); } catch (e) {} rec = null; } }
@@ -320,13 +560,23 @@ $("listen").addEventListener("click", () => {
 });
 
 // ---------- Read aloud ----------
+let speaking = false;
 function speak(text) {
   if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  const v = speechSynthesis.getVoices().find(v => /en-IE/i.test(v.lang)) || speechSynthesis.getVoices().find(v => /en-GB/i.test(v.lang));
-  if (v) u.voice = v; speechSynthesis.speak(u);
+  const vs = speechSynthesis.getVoices();
+  const v = vs.find(v => /en-IE/i.test(v.lang)) || vs.find(v => /en-GB/i.test(v.lang));
+  if (v) u.voice = v; u.rate = 1;
+  speaking = true; if (rec) { try { rec.stop(); } catch (e) {} }
+  u.onend = u.onerror = () => { speaking = false; if (listening && rec) { try { rec.start(); } catch (e) {} } };
+  speechSynthesis.speak(u);
 }
+function stopSpeaking() { if ("speechSynthesis" in window) speechSynthesis.cancel(); }
+let autoSpeak = false; try { autoSpeak = localStorage.getItem("kyg_coach_speak") === "1"; } catch (e) {}
+function paintSpeak() { $("speakToggle").textContent = "Speak answers: " + (autoSpeak ? "on" : "off"); $("speakToggle").classList.toggle("on", autoSpeak); }
+paintSpeak();
+$("speakToggle").addEventListener("click", () => { autoSpeak = !autoSpeak; try { localStorage.setItem("kyg_coach_speak", autoSpeak ? "1" : "0"); } catch (e) {} paintSpeak(); if (!autoSpeak) stopSpeaking(); });
 
 // ---------- 3-minute clock ----------
 let left = 180, tick = null;
