@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grub Q&A Coach</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#F4F8F3; --surface:#FFFFFF; --surface2:#EAF2E9; --line:#CFDDCF;
+  --ink:#152419; --ink2:#4F6355; --accent:#1E7B3A; --accent-deep:#0F4A24; --accent-soft:#D7EBD9;
+  --warn:#9A6A12; --warn-soft:#FBEFD2; --bad:#A63D2F; --bad-soft:#F8E1DC;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --display:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1811; --surface:#152219; --surface2:#1C2C21; --line:#2C4232;
+    --ink:#E7F0E8; --ink2:#A4B7A8; --accent:#5CC97A; --accent-deep:#9FE3B1; --accent-soft:#1F3A27;
+    --warn:#E5B85C; --warn-soft:#3A2E12; --bad:#F09A8C; --bad-soft:#41211B;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1811; --surface:#152219; --surface2:#1C2C21; --line:#2C4232;
+  --ink:#E7F0E8; --ink2:#A4B7A8; --accent:#5CC97A; --accent-deep:#9FE3B1; --accent-soft:#1F3A27;
+  --warn:#E5B85C; --warn-soft:#3A2E12; --bad:#F09A8C; --bad-soft:#41211B;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:18px}
+h1{font-family:var(--display);font-weight:700;font-size:28px;line-height:1.1;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1 span{color:var(--accent)}
+.sub{color:var(--ink2);margin:4px 0 0;font-size:14px}
+.timer{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 16px}
+.timer b{font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums;min-width:4ch}
+.timer.low b{color:var(--bad)}
+.timer small{color:var(--ink2);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+button{font-family:var(--body);font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+button.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+button.listen{gap:8px;display:inline-flex;align-items:center}
+button.listen.on{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+button.listen .dot{width:10px;height:10px;border-radius:50%;background:var(--bad);opacity:.35}
+button.listen.on .dot{opacity:1;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{transform:scale(1.5);opacity:.5}}
+@media (prefers-reduced-motion:reduce){button.listen.on .dot{animation:none}}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:20px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+aside{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;align-self:start;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+@media (max-width:820px){aside{position:static;max-height:none}}
+aside h2{font-family:var(--display);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:10px 0 6px;font-weight:600}
+aside h2:first-child{margin-top:0}
+.q{display:block;width:100%;text-align:left;border:0;background:transparent;padding:6px 8px;border-radius:8px;font-size:14px;line-height:1.35;color:var(--ink)}
+.q:hover{background:var(--surface2)}
+.q.tech::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:8px;vertical-align:middle}
+main{min-width:0}
+.banner{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn);border-radius:10px;padding:10px 14px;font-size:14px;margin-bottom:14px}
+.banner[hidden]{display:none}
+.ask{display:flex;gap:8px;align-items:flex-end;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px}
+.ask textarea{flex:1;border:0;background:transparent;color:var(--ink);font-family:var(--body);font-size:16px;resize:none;min-height:44px;max-height:140px;outline:none;padding:8px 6px}
+.interim{font-style:italic;color:var(--ink2);font-size:14px;min-height:20px;margin:6px 4px 0}
+.thread{display:flex;flex-direction:column;gap:14px;margin-top:16px}
+.turn{display:grid;grid-template-columns:auto 1fr;gap:12px}
+.turn .who{font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);padding-top:6px;min-width:56px}
+.turn.judge .bubble{background:var(--surface2);border-radius:12px;padding:10px 14px;font-weight:700}
+.turn.coach .bubble{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.sec{margin:0 0 12px}
+.sec:last-child{margin-bottom:0}
+.sec h3{font-family:var(--display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 4px;color:var(--ink2);font-weight:600}
+.sec.say{border-left:3px solid var(--accent);padding-left:12px}
+.sec.say h3{color:var(--accent)}
+.sec.say p{font-size:18px;line-height:1.45;margin:0}
+.sec.numbers p, .sec.push p, .sec.dont p{margin:0;font-size:15px}
+.sec.numbers{font-variant-numeric:tabular-nums}
+.sec.dont{background:var(--bad-soft);border-radius:8px;padding:8px 12px}
+.sec.dont h3{color:var(--bad)}
+.notes{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:13px;color:var(--ink2)}
+.tools{display:flex;gap:6px;margin-top:10px}
+.tools button{font-size:12px;padding:4px 10px}
+.thinking{color:var(--ink2);font-style:italic}
+.err{color:var(--bad);font-size:14px}
+.foot{margin-top:24px;font-size:12px;color:var(--ink2)}
+.stage{background:var(--surface);border:2px solid var(--accent);border-radius:16px;padding:16px 18px;margin-bottom:16px}
+.stage .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.stage .eyebrow{font-family:var(--display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.stage .question{font-family:var(--display);font-weight:700;font-size:22px;line-height:1.25;margin:0 0 12px;text-wrap:balance}
+.stage .question.empty{color:var(--ink2);font-weight:500;font-size:18px}
+.stage .answer .sec.say p{font-size:20px}
+.gear{width:38px;height:38px;padding:0;display:inline-grid;place-items:center;font-size:18px}
+.drawer{position:fixed;inset:0;background:rgba(0,0,0,.35);display:grid;place-items:center;z-index:20;padding:16px}
+.drawer[hidden]{display:none}
+.drawer .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;width:min(520px,100%);font-size:14px}
+.drawer h2{font-family:var(--display);margin:0 0 6px;font-size:18px}
+.drawer label{display:block;margin-top:10px;color:var(--ink2)}
+.drawer input{width:100%;font-family:var(--mono);font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.drawer .row{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+h2.past{font-family:var(--display);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:20px 0 8px;font-weight:600}
+</style></head><body>
+
+<div class="wrap">
+<header>
+  <div>
+    <h1>Grub <span>Q&amp;A</span> Coach</h1>
+    <p class="sub">Type or say a judge's question. Get the answer Donal should give — in 30 seconds, from the brief, nothing invented.</p>
+  </div>
+  <div class="timer" id="timer"><small>Q&amp;A clock</small><b id="clock">3:00</b><button id="tStart">Start</button><button id="tReset">Reset</button></div>
+  <button class="gear" id="gearBtn" title="Settings" aria-label="Settings">&#9881;</button>
+</header>
+
+<div class="stage" id="stage">
+  <div class="top"><span class="eyebrow" id="stageLabel">Waiting for a question</span><button class="primary" id="nextBtn">Next question</button></div>
+  <p class="question empty" id="stageQ">Say the question out loud, type it below, or pick one from the list.</p>
+  <div class="answer" id="stageA"></div>
+</div>
+
+<div class="drawer" id="drawer" hidden><div class="panel"><h2>Settings</h2><div id="settingsBody"><label for="apikey">Anthropic API key (kept only in this browser's storage)</label><input id="apikey" type="password" placeholder="sk-ant-…" autocomplete="off">
+<label for="model">Model</label><input id="model" value="claude-sonnet-4-5">
+<p style="margin:10px 0 0;color:var(--ink2)">Keep this file to yourself; the key lives in local storage on this machine only.</p></div><div class="row"><button id="drawerClose">Done</button></div></div></div>
+
+<div class="grid">
+<aside id="bank"></aside>
+<main>
+  <div class="banner" id="banner" hidden></div>
+  <div class="ask">
+    <textarea id="qin" placeholder="e.g. How do you stop the AI hallucinating an allergen?" rows="1"></textarea>
+    <button class="listen" id="listen" title="Listen for a question (Chrome / Edge / Safari)"><span class="dot"></span><span id="listenLbl">Listen</span></button>
+    <button class="primary" id="send">Coach me</button>
+  </div>
+  <div class="interim" id="interim"></div>
+  <h2 class="past" id="pastHdr" hidden>Earlier questions</h2>
+  <div class="thread" id="thread"></div>
+  <p class="foot">Brief inside this page: deck of 13 Sept, feature register v2.13.1, veracity layer v1.3.0, veracity check of 3 Sept. If the coach says "not in the brief", say you'll follow up — don't guess on stage.</p>
+</main>
+</div>
+</div>
+
+<script>
+// ---------- The brief the coach is primed with ----------
+const BRIEF = `
+KNOWYOURGRUB (KYG) — BRIEF FOR THE Q&A COACH. TechIreland National AI Challenge 2026. Pitch Mon 14 Sept: 7-min pitch + 3-min Q&A. Team: Bridget (Nutritional Therapist, IINH certified, client insight), Donal (technology & AI engineering — the person answering tech questions), Norma (product, commercial, behaviour change; serial entrepreneur, 2 exits, 25 yrs payments/regulated finance; psychotherapist).
+
+WHAT IT IS: "Scan. Check. Shop." A shopper scans a barcode or photographs the label; KYG checks the product against every person in the household (allergies, intolerances, coeliac, vegan, religious rules, nutrition goals) and gives a verdict: good match / flagged / needs a manufacturer check. Also: Ask Grub (chat), basket with running totals, food & symptom diary with pattern detection, receipts, FSAI recall watch, "find me something else" swap agent, lab/test-report reading. Web app (responsive, PWA-style), NOT a native app yet: knowyourgrub.pages.dev / knowyourgrub.com. Build v2.13.1 (9 Sept 2026), 65 registered features.
+
+ARCHITECTURE: one self-contained index.html on Cloudflare Pages (never minified). A Cloudflare Worker proxy (v2.4.21) holds all API keys and talks to: Anthropic Claude (label reading via vision, explanations, chat, swap agent), Open Food Facts (product data by barcode; Search-a-licious for candidates), FSAI website (allergen alerts — scraped, no API or RSS exists, cached 1 hour, never cached on failure), OpenAI gpt-4o-mini-transcribe (push-to-talk voice only; worker keeps no copy). Barcode: native BarcodeDetector where present, otherwise ZXing (pinned 0.21.3, fetched on first use) — live scanning works on iPhone since v2.9. In-browser OCR fallback if the model can't be reached. Label vs database clash: "believe the box" — the pack in your hand is the primary source; a label can be remembered against its barcode.
+
+PRIVACY: everything (profiles, diary, history) stays on the device (localStorage). Stated exceptions: a review on Send; a voice clip while the button is held. Recall matching happens on the phone, not the server. No accounts, no server-side household data. GDPR angle: health-related preferences are special-category data, so keeping them on-device is the design choice, not an afterthought.
+
+THE VERACITY LAYER (v1.3.0, the core technical claim): "The model never asserts. It only phrases." A rules engine decides yes/no/maybe; the LLM only explains in plain words. Every generative surface (explain, chat, diary read, swap agent) goes through askGrounded(): BEFORE the call a grounding envelope collects the permitted material (the label's own words + ambiguity-KB entries) and appends grounding rules; AFTER the call an assertion guard checks the answer against the same envelope. The guard fails closed: a refused answer is thrown away (not softened) and the label's own words are shown instead under "We are not going to put that in our own words." If the layer fails to load, nothing is generated. Guard refuses: numbers not in the envelope; definite claims on open questions ("the lecithin IS soya"); absence claims ("does not contain", "free from") unless the label states it; instructions/diagnosis ("safe to eat", "you should avoid", "will trigger").
+
+AMBIGUITY KNOWLEDGE BASE: 18 entries, each cites Reg (EU) 1169/2011 or FSA/FSAI guidance with a basis (14 stated in law, 3 argument-from-silence, 1 applied). Star example: wheat-based glucose syrup is EXEMPT from allergen labelling (Annex II point 1(a)) — a label may say "glucose syrup" with no mention of wheat, so keyword matching for "wheat" gets it backwards. Others: lecithin/E322 only names its source if allergenic (plain "lecithin" is usually sunflower/rapeseed — you cannot conclude soya); E471 (vegetable or animal, label needn't say); natural flavouring; "may contain" is voluntary so its absence proves nothing; gelatine, rennet, vitamin D3, E920, isinglass. For a target in Annex II the engine returns manufacturer_check and stops — it never guesses. Substring bug fixed v2.7: "coconut cream" is not cream, "peanut butter" is not butter.
+
+TESTING / EVIDENCE: feature register runs every launch — 65 rows, each with a runtime test; losses raise a red panel; reachability audit catches features that run but can't be reached on screen. 28 veracity unit tests. score.mjs: offline ground-truth scorer against KYG_ground_truth (rows split: string-matchable vs legal-omission) — exits non-zero if the engine ever answers a row a person marked manufacturer_check. Recall matcher has real fixtures (Flahavan's 2026.A24, chilli/chillie). Live recall test barcodes from real FSAI alerts: Doritos, Flahavan's, HiPP.
+
+HONEST GAPS (say them if asked, don't volunteer): KB not yet reviewed by a food-law professional; guard's false-positive rate on real answers unmeasured; no push notifications while app is closed; native mobile app, nutritionist platform, translation are roadmap (6–12 months); camera/OCR/label-clash not fully hand-tested on every device; AI tools provided by the Challenge — mainly Claude used, OpenAI only for transcription (be honest, don't overclaim).
+
+VALIDATION (deck): 50+ profiles created, 100+ products scanned, 400 professionals contacted (contacted, not converted), mentor engagement, prototype nutritionist platform, RAIMS canvas for AI governance.
+
+MARKET & MODEL (deck): safefood: at least 10% of people in Ireland avoid something, up to 900,000. 2,100+ dietitians/qualified nutrition professionals in Ireland. Global: ~585,000 dietitian-nutritionists (ICDA). Pricing: consumer €7.99/month direct; practitioner platform €45/month; practitioner-referred client €6.99/month with €2.99/month back to the practitioner (16 clients cover the fee). Ireland consumer at 1% / 5% / 10% penetration = €0.86m / €4.3m / €8.6m ARR. Competitors: Yuka (85m users, ignores "traces"), Fig, Spoonful, Noom, MyFitnessPal, Open Food Facts — none handles Annex II exemptions; most string-match hidden names. FSAI allergen alerts: 48 in 2025, 58 in 2024 (highest), 25 to end-Aug 2026.
+
+CLAIMS DISCIPLINE (never breach): never say "safe", never diagnose, never "contains X" when the label doesn't — say "the label says", "check your pack", "we show the words and point to the manufacturer". Not a medical device: it quotes labels and applies the shopper's own rules; it does not diagnose or advise treatment.
+`;
+
+const RULES = `You are the Q&A coach for Donal, the technology lead. A judge has just asked a question in a 3-minute Q&A. Using ONLY the brief above, write the answer Donal should give. Rules: spoken answer 40–70 words, first person plural, plain Irish/British English, lead with the direct answer then one concrete detail. Never invent a number, name or feature not in the brief — if the brief doesn't cover it, say so in NUMBERS as "Not in the brief — say you'll follow up" and give the safest honest line. Respect the claims discipline. Output exactly these four sections with these exact headings on their own lines:
+SAY THIS
+<the spoken answer>
+NUMBERS
+<up to 3 facts/figures from the brief to have to hand, or "None needed">
+DON'T SAY
+<one or two phrasings to avoid and why, from the claims discipline>
+IF THEY PUSH
+<one-line follow-up answer for the likely harder version of the question>`;
+
+// ---------- Likely questions, grouped by judging criterion ----------
+const BANK = [
+ ["Build with AI / responsible AI", [
+  ["How do you stop the AI hallucinating that a product is safe?", true, "Rules engine decides; model only phrases; guard fails closed."],
+  ["What happens when the model gets it wrong?", true, "Answer thrown away, label's words shown instead. Never softened."],
+  ["Which AI models and tools did you use, and did you use the ones provided?", true, "Claude for vision/chat; OpenAI only for transcription. Be honest."],
+  ["How did you test it? What's your accuracy?", true, "65-row register every launch; 28 veracity tests; score.mjs ground truth; manufacturer_check rows must be 0 wrong."],
+  ["Where does the user's health data go? GDPR?", true, "On device. Two stated exceptions. Nothing server-side about the household."],
+  ["Why not just prompt the model better?", true, "A prompt is a request. Guard checks the output against the same envelope."],
+  ["Is this a medical device?", true, "Quotes the label, applies the shopper's own rules. No diagnosis, no advice."],
+  ["How do you handle 'may contain' and cross-contamination?", true, "PAL is voluntary; absence proves nothing; we say so."],
+  ["What does 'the label is allowed to be silent' actually mean?", true, "Annex II 1(a): wheat glucose syrup exempt. Keyword matching gets it backwards."],
+  ["What's the AI Act / EU regulatory exposure?", true, "Not high-risk use; not diagnosing. Confirm before asserting on stage."]
+ ]],
+ ["Solution / demo", [
+  ["Does it work on iPhone? Native app?", true, "Web app; live scanning on iPhone since v2.9 (ZXing). Native app is roadmap."],
+  ["What if the product isn't in the database?", true, "Photograph the label; Claude vision reads it; believe the box; remember it against the barcode."],
+  ["How current are your recall alerts?", true, "FSAI has no API; scraped hourly; matched on the phone by name, not barcode."],
+  ["What happens offline or if the API is down?", true, "In-browser OCR fallback; last fetched alerts shown with their time; no ungrounded prose."]
+ ]],
+ ["Problem & customer", [
+  ["Who exactly is the customer — the shopper or the nutritionist?", false, "Both: practitioners are the distribution engine, consumers subscribe directly."],
+  ["How many people have actually used it?", false, "50+ profiles, 100+ products scanned, 400 professionals contacted."],
+  ["Isn't this just Yuka?", false, "Yuka ignores traces; none of the nine apps checked handles Annex II exemptions; household profiles."]
+ ]],
+ ["Commercial", [
+  ["Why would a nutritionist pay €45 a month?", false, "Time saved on 'is this OK for me?' messages; adherence; €2.99 share is a bonus."],
+  ["What's your TAM, honestly?", false, "Lead with Ireland: 900k people, 2,100 practitioners; 1% = €0.86m ARR."],
+  ["What will you do in the next 6 months?", false, "Nutritionist platform, native app, translation, pricing validation, partnerships."],
+  ["What's the ask?", false, "Pilot practitioners; intros; fundraising is on the 6–12 month list."]
+ ]]
+];
+
+// ---------- State ----------
+let history = [], listening = false, rec = null, ctl = null;
+const $ = id => document.getElementById(id);
+
+// Bank
+const bank = $("bank");
+BANK.forEach(([grp, qs]) => {
+  const h = document.createElement("h2"); h.textContent = grp; bank.appendChild(h);
+  qs.forEach(([q, tech, note]) => {
+    const b = document.createElement("button"); b.className = "q" + (tech ? " tech" : ""); b.textContent = q;
+    b.addEventListener("click", () => ask(q, note)); bank.appendChild(b);
+  });
+});
+const key = document.createElement("p"); key.style.cssText = "font-size:12px;color:var(--ink2);margin:12px 0 0"; key.innerHTML = "<span class='q tech' style='display:inline;padding:0'></span>tech question — Donal's to answer"; bank.appendChild(key);
+
+// API key settings
+const KEYS={k:"kyg_coach_key",m:"kyg_coach_model"};
+try{ $("apikey").value=localStorage.getItem(KEYS.k)||""; $("model").value=localStorage.getItem(KEYS.m)||"claude-sonnet-4-5"; }catch(e){}
+$("apikey").addEventListener("input",e=>{try{localStorage.setItem(KEYS.k,e.target.value.trim())}catch(err){}});
+$("model").addEventListener("input",e=>{try{localStorage.setItem(KEYS.m,e.target.value.trim())}catch(err){}});
+if(!$("apikey").value){ $("banner").hidden=false; $("banner").innerHTML='Paste your Anthropic API key under the &#9881; settings button (top right) to get live answers. The question bank notes work without it.'; }
+async function sample(turns,opts){
+  const key=$("apikey").value.trim(); if(!key){ const e=new Error("No API key set."); e.code="not_granted"; throw e; }
+  const system=turns[0].content.replace(/\n\nReply 'Ready\.'$/,""); const messages=turns.slice(2);
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",signal:opts.signal,headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:$("model").value.trim(),max_tokens:700,system,messages})});
+  if(!r.ok){ const t=await r.text(); const e=new Error("API "+r.status+": "+t.slice(0,300)); e.code=r.status===429?"rate_limited":"api"; throw e; }
+  const j=await r.json(); const text=(j.content||[]).map(c=>c.text||"").join(""); if(opts.onText) opts.onText({text,delta:text}); return {text};
+}
+
+// ---------- Ask ----------
+let stageBubble = null;
+function archiveStage() {
+  const q = $("stageQ"); if (q.classList.contains("empty")) return;
+  const t = document.createElement("div"); t.className = "turn coach";
+  t.innerHTML = `<div class="who">Judge</div><div class="bubble"><p style="margin:0 0 10px;font-weight:700">${esc(q.textContent)}</p>${$("stageA").innerHTML}</div>`;
+  $("thread").prepend(t); $("pastHdr").hidden = false;
+}
+function nextQuestion() {
+  if (ctl) ctl.abort(); if ("speechSynthesis" in window) speechSynthesis.cancel();
+  archiveStage();
+  $("stageQ").textContent = "Say the question out loud, type it below, or pick one from the list."; $("stageQ").classList.add("empty");
+  $("stageA").innerHTML = ""; $("stageLabel").textContent = "Waiting for a question"; $("interim").textContent = "";
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+$("nextBtn").addEventListener("click", nextQuestion);
+function addTurn(cls, who, html) {
+  if (cls === "judge") { archiveStage(); $("stageQ").textContent = html.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">"); $("stageQ").classList.remove("empty"); $("stageLabel").textContent = "Now answering"; $("stageA").innerHTML = ""; window.scrollTo({top:0, behavior:"smooth"}); return $("stageA"); }
+  $("stageA").innerHTML = html; return $("stageA");
+}
+function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+function render(text) {
+  const secs = {"SAY THIS":"say","NUMBERS":"numbers","DON'T SAY":"dont","IF THEY PUSH":"push"};
+  const out = {}; let cur = null;
+  text.split(/\r?\n/).forEach(l => { const k = l.trim().replace(/[*#:]/g,"").toUpperCase(); if (secs[k]) { cur = secs[k]; out[cur] = []; } else if (cur) out[cur].push(l); });
+  if (!Object.keys(out).length) return `<div class="sec say"><p>${esc(text)}</p></div>`;
+  const block = (k, title) => out[k] ? `<div class="sec ${k}"><h3>${title}</h3><p>${esc(out[k].join("\n").trim()).replace(/\n/g,"<br>")}</p></div>` : "";
+  return block("say","Say this") + block("numbers","Numbers to hand") + block("dont","Don't say") + block("push","If they push");
+}
+async function ask(q, note) {
+  q = (q || "").trim(); if (!q) return;
+  $("qin").value = ""; $("interim").textContent = "";
+  addTurn("judge", "Judge", esc(q));
+  const bubble = addTurn("coach", "Coach", note ? `<div class="notes">Notes to hand: ${esc(note)}</div>` : "");
+  if (false) { if (!note) bubble.innerHTML = `<p class="err">Live coaching isn't available here. Pick a question from the bank for its notes.</p>`; return; }
+  const live = document.createElement("div"); live.className = "thinking"; live.textContent = "Thinking…"; bubble.prepend(live);
+  if (ctl) ctl.abort(); ctl = new AbortController();
+  const turns = [{role:"user", content: BRIEF + "\n\n" + RULES + "\n\nReply 'Ready.'"}, {role:"assistant", content:"Ready."}, ...history.slice(-6), {role:"user", content:"Judge's question: " + q}];
+  try {
+    const r = await sample(turns, {cache:false, signal:ctl.signal, onText:({text}) => { live.className = ""; live.innerHTML = render(text); }});
+    live.className = ""; live.innerHTML = render(r.text);
+    history.push({role:"user", content:"Judge's question: " + q}, {role:"assistant", content:r.text});
+    const tools = document.createElement("div"); tools.className = "tools";
+    const say = /SAY THIS\s*\n([\s\S]*?)\n\s*NUMBERS/i.exec(r.text); const spoken = say ? say[1].trim() : r.text;
+    const b1 = document.createElement("button"); b1.textContent = "Read aloud"; b1.onclick = () => speak(spoken);
+    const b2 = document.createElement("button"); b2.textContent = "Copy answer"; b2.onclick = () => navigator.clipboard?.writeText(spoken).then(()=>{b2.textContent="Copied";setTimeout(()=>b2.textContent="Copy answer",1500)});
+    tools.append(b1, b2); bubble.appendChild(tools);
+  } catch (e) {
+    if (e && (e.code === "cancelled" || e.name === "AbortError")) { live.remove(); return; }
+    live.className = "err";
+    live.textContent = e && e.code === "rate_limited" ? "Rate limited — wait a moment and ask again." : e && e.code === "not_granted" ? "No API key — open the settings (top right) and paste one." : "Couldn't get an answer: " + (e && e.message || e) + (e && e.text ? "\n\n" + e.text : "");
+  }
+}
+$("send").addEventListener("click", () => ask($("qin").value));
+$("qin").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask($("qin").value); } });
+$("qin").addEventListener("input", e => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px"; });
+
+// ---------- Settings drawer ----------
+$("gearBtn").addEventListener("click", () => { $("drawer").hidden = false; });
+$("drawerClose").addEventListener("click", () => { $("drawer").hidden = true; });
+$("drawer").addEventListener("click", e => { if (e.target === $("drawer")) $("drawer").hidden = true; });
+
+// ---------- Listening ----------
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SR) { $("listen").disabled = true; $("listen").title = "Speech recognition isn't available in this browser — try Chrome, Edge or Safari."; }
+function startRec() {
+  rec = new SR(); rec.lang = "en-IE"; rec.continuous = true; rec.interimResults = true;
+  let finalBuf = "", timer = null;
+  rec.onresult = ev => {
+    let interim = "";
+    for (let i = ev.resultIndex; i < ev.results.length; i++) { const t = ev.results[i][0].transcript; if (ev.results[i].isFinal) finalBuf += t + " "; else interim += t; }
+    $("interim").textContent = (finalBuf + interim).trim();
+    clearTimeout(timer);
+    if (finalBuf.trim()) timer = setTimeout(() => { const q = finalBuf.trim(); finalBuf = ""; ask(q); }, 1400);
+  };
+  rec.onerror = ev => { if (ev.error === "not-allowed") { stopRec(); $("interim").textContent = "Microphone blocked — allow it in the address bar and try again."; } };
+  rec.onend = () => { if (listening) { try { rec.start(); } catch (e) {} } };
+  rec.start();
+}
+function stopRec() { listening = false; $("listen").classList.remove("on"); $("listenLbl").textContent = "Listen"; if (rec) { rec.onend = null; try { rec.stop(); } catch (e) {} rec = null; } }
+$("listen").addEventListener("click", () => {
+  if (listening) { stopRec(); return; }
+  listening = true; $("listen").classList.add("on"); $("listenLbl").textContent = "Listening…"; $("interim").textContent = "Ask the question out loud; it sends after a pause.";
+  try { startRec(); } catch (e) { stopRec(); $("interim").textContent = "Couldn't start the microphone: " + e.message; }
+});
+
+// ---------- Read aloud ----------
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = speechSynthesis.getVoices().find(v => /en-IE/i.test(v.lang)) || speechSynthesis.getVoices().find(v => /en-GB/i.test(v.lang));
+  if (v) u.voice = v; speechSynthesis.speak(u);
+}
+
+// ---------- 3-minute clock ----------
+let left = 180, tick = null;
+function paint() { const m = Math.floor(left/60), s = left%60; $("clock").textContent = m + ":" + String(s).padStart(2,"0"); $("timer").classList.toggle("low", left <= 30); }
+$("tStart").addEventListener("click", () => {
+  if (tick) { clearInterval(tick); tick = null; $("tStart").textContent = "Start"; return; }
+  $("tStart").textContent = "Pause";
+  tick = setInterval(() => { if (left > 0) { left--; paint(); } else { clearInterval(tick); tick = null; $("tStart").textContent = "Start"; } }, 1000);
+});
+$("tReset").addEventListener("click", () => { clearInterval(tick); tick = null; left = 180; paint(); $("tStart").textContent = "Start"; });
+</script>
+</body></html>
