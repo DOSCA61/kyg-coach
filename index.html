@@ -175,6 +175,7 @@ IF THEY PUSH
 // ---------- Likely questions, grouped by judging criterion ----------
 const BANK = [
  ["Build with AI / responsible AI", [
+  ["How is KnowYourGrub agentic?", true, "Swap agent: search, open, read, check, claim only what it read; auto-runs on a problem. Decisions stay with the person."],
   ["How do you stop the AI hallucinating that a product is safe?", true, "Rules engine decides; model only phrases; guard fails closed."],
   ["What happens when the model gets it wrong?", true, "Answer thrown away, label's words shown instead. Never softened."],
   ["Which AI models and tools did you use, and did you use the ones provided?", true, "Claude for vision/chat; OpenAI only for transcription. Be honest."],
@@ -207,6 +208,15 @@ const BANK = [
 
 // ---------- Prepared answers (instant, no API call) ----------
 const PRE = {
+"How is KnowYourGrub agentic?": `SAY THIS
+In one place, properly. When a product fails for someone in the house, the swap agent does the legwork itself: it searches for alternatives, opens each candidate, reads its real ingredients, checks it against everyone's rules, and only claims what it actually read. It runs on its own every time a scan finds a problem. Recall matching works the same way. What we deliberately didn't build is an agent that acts on your profile or basket without a tap: the agency is in the legwork, the decisions stay with the person.
+NUMBERS
+Swap agent: search tool over Open Food Facts, opens each candidate, one "ground" event per product opened, summary checked against those labels; refuses if nothing was opened. Auto-runs on every problem since v2.5. Recall watch: every launch, matched on the phone. In-store check: one shop, once, respects robots.
+DON'T SAY
+"Fully autonomous" or "it shops for you". Nothing buys, nothing edits your profile or diary without a tap, nothing listens on its own.
+IF THEY PUSH
+Every agentic surface runs through the same veracity guard as the chat; the agent's prose was the last ungrounded surface and was grounded in v2.7.`,
+
 "How do you stop the AI hallucinating that a product is safe?": `SAY THIS
 It can't, because the model never decides. A rules engine checks the label against each person's profile and returns yes, no or "ask the manufacturer". The language model only puts that result into plain words, and every answer is checked afterwards against the label's own text. Anything that goes further than the label is thrown away.
 NUMBERS
@@ -417,7 +427,7 @@ const KEYS={k:"kyg_coach_key",m:"kyg_coach_model"};
 try{ $("apikey").value=localStorage.getItem(KEYS.k)||""; $("model").value=localStorage.getItem(KEYS.m)||"claude-sonnet-4-5"; }catch(e){}
 $("apikey").addEventListener("input",e=>{try{localStorage.setItem(KEYS.k,e.target.value.trim())}catch(err){}});
 $("model").addEventListener("input",e=>{try{localStorage.setItem(KEYS.m,e.target.value.trim())}catch(err){}});
-if(!$("apikey").value){ $("banner").hidden=false; $("banner").innerHTML='The 21 listed questions answer instantly. For anything else, paste your Anthropic API key under the &#9881; button (top right).'; }
+if(!$("apikey").value){ $("banner").hidden=false; $("banner").innerHTML='The 22 listed questions answer instantly. For anything else, paste your Anthropic API key under the &#9881; button (top right).'; }
 async function sample(turns,opts){
   const key=$("apikey").value.trim(); if(!key){ const e=new Error("No API key set."); e.code="not_granted"; throw e; }
   const system=turns[0].content.replace(/\n\nReply 'Ready\.'$/,""); const messages=turns.slice(2);
@@ -457,6 +467,7 @@ function render(text) {
   return block("say","Say this") + block("numbers","Numbers to hand") + block("dont","Don't say") + block("push","If they push");
 }
 const HINTS = [
+ ["How is KnowYourGrub agentic?", ["agentic","agent","autonomous","autonomy","on its own","takes action","agents"]],
  ["How do you stop the AI hallucinating that a product is safe?", ["hallucinat","make things up","invent","wrong answer","trust the ai","trust the model"]],
  ["What happens when the model gets it wrong?", ["gets it wrong","goes wrong","mistake","error","incorrect"]],
  ["Which AI models and tools did you use, and did you use the ones provided?", ["which model","what model","models did","tools provided","openai","gpt","gemini","claude","credits","tech stack","stack"]],
